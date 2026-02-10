@@ -10,10 +10,10 @@ dotenv_1.default.config();
 const AZURE_STORAGE_CONNECTION_STRING = process.env.AZURE_STORAGE_CONNECTION_STRING;
 const containerName = process.env.AZURE_STORAGE_CONTAINER_NAME;
 let containerClient;
-if (!AZURE_STORAGE_CONNECTION_STRING || !containerName) {
-    console.warn('[Azure Blob] Missing connection string or container name. Blob client not initialized.');
-}
-else {
+if (AZURE_STORAGE_CONNECTION_STRING && containerName) {
     const blobServiceClient = storage_blob_1.BlobServiceClient.fromConnectionString(AZURE_STORAGE_CONNECTION_STRING);
     exports.containerClient = containerClient = blobServiceClient.getContainerClient(containerName);
+}
+else {
+    console.warn('[Azure Blob] Missing connection string or container name. Blob client not initialized.');
 }

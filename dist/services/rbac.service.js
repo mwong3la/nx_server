@@ -34,7 +34,7 @@ class RBACService {
             return false;
         }
         // Additional checks for resource ownership
-        if (user.role === rbac_types_1.UserRole.VOLUNTEER || user.role === rbac_types_1.UserRole.DONOR) {
+        if (user.role === rbac_types_1.UserRole.USER || user.role === rbac_types_1.UserRole.TECHNICIAN) {
             return await this.checkResourceOwnership(userId, resourceType, resourceId);
         }
         return true;
@@ -47,14 +47,9 @@ class RBACService {
         switch (resourceType) {
             case 'user':
                 return resourceId === userId;
-            case 'feedback':
-                // Check if user created this feedback
-                // You'll need to implement this based on your models
-                return true; // Placeholder
-            case 'event':
-                // Check if volunteer is assigned to this event
-                // You'll need to implement this based on your models
-                return true; // Placeholder
+            case 'vehicle':
+            case 'inspection':
+                return true; // Ownership checked in controllers
             default:
                 return false;
         }

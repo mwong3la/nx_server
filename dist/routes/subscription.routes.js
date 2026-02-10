@@ -37,11 +37,11 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = require("express");
-const reportController = __importStar(require("../controllers/diagnosticReport.controller"));
+const subscriptionController = __importStar(require("../controllers/subscription.controller"));
 const auth_middleware_1 = __importDefault(require("../middlewares/auth.middleware"));
 const router = (0, express_1.Router)();
-router.use(auth_middleware_1.default);
-router.get('/', reportController.list);
-router.get('/:id', reportController.get);
-router.patch('/:id', reportController.updateReport);
+router.get('/plans', subscriptionController.listPlans);
+router.get('/mine', auth_middleware_1.default, subscriptionController.getMine);
+router.post('/', auth_middleware_1.default, subscriptionController.create);
+router.post('/:id/cancel', auth_middleware_1.default, subscriptionController.cancel);
 exports.default = router;

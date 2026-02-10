@@ -9,78 +9,61 @@ var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.User = void 0;
+exports.SubscriptionPlan = void 0;
 const sequelize_typescript_1 = require("sequelize-typescript");
-const rbac_types_1 = require("../../types/rbac.types");
-const Vehicle_1 = require("./Vehicle");
-const Inspection_1 = require("./Inspection");
 const Subscription_1 = require("./Subscription");
-let User = class User extends sequelize_typescript_1.Model {
+let SubscriptionPlan = class SubscriptionPlan extends sequelize_typescript_1.Model {
 };
-exports.User = User;
+exports.SubscriptionPlan = SubscriptionPlan;
 __decorate([
     sequelize_typescript_1.PrimaryKey,
     (0, sequelize_typescript_1.Default)(sequelize_typescript_1.DataType.UUIDV4),
     (0, sequelize_typescript_1.Column)(sequelize_typescript_1.DataType.UUID),
     __metadata("design:type", String)
-], User.prototype, "id", void 0);
+], SubscriptionPlan.prototype, "id", void 0);
 __decorate([
     (0, sequelize_typescript_1.AllowNull)(false),
     (0, sequelize_typescript_1.Column)(sequelize_typescript_1.DataType.STRING),
     __metadata("design:type", String)
-], User.prototype, "name", void 0);
-__decorate([
-    (0, sequelize_typescript_1.AllowNull)(false),
-    sequelize_typescript_1.Unique,
-    sequelize_typescript_1.IsEmail,
-    (0, sequelize_typescript_1.Column)(sequelize_typescript_1.DataType.STRING),
-    __metadata("design:type", String)
-], User.prototype, "email", void 0);
+], SubscriptionPlan.prototype, "name", void 0);
 __decorate([
     (0, sequelize_typescript_1.AllowNull)(false),
     (0, sequelize_typescript_1.Column)(sequelize_typescript_1.DataType.STRING),
     __metadata("design:type", String)
-], User.prototype, "password", void 0);
+], SubscriptionPlan.prototype, "slug", void 0);
 __decorate([
     (0, sequelize_typescript_1.AllowNull)(true),
-    (0, sequelize_typescript_1.Column)(sequelize_typescript_1.DataType.STRING),
+    (0, sequelize_typescript_1.Column)(sequelize_typescript_1.DataType.TEXT),
     __metadata("design:type", String)
-], User.prototype, "phone", void 0);
-__decorate([
-    (0, sequelize_typescript_1.Column)({
-        type: sequelize_typescript_1.DataType.ENUM(...Object.values(rbac_types_1.UserRole)),
-        allowNull: false,
-        defaultValue: rbac_types_1.UserRole.USER,
-    }),
-    __metadata("design:type", String)
-], User.prototype, "role", void 0);
+], SubscriptionPlan.prototype, "description", void 0);
 __decorate([
     (0, sequelize_typescript_1.AllowNull)(false),
-    (0, sequelize_typescript_1.Default)(true),
-    (0, sequelize_typescript_1.Column)(sequelize_typescript_1.DataType.BOOLEAN),
-    __metadata("design:type", Boolean)
-], User.prototype, "isActive", void 0);
+    (0, sequelize_typescript_1.Column)(sequelize_typescript_1.DataType.DECIMAL(10, 2)),
+    __metadata("design:type", Number)
+], SubscriptionPlan.prototype, "priceMonthly", void 0);
 __decorate([
     (0, sequelize_typescript_1.AllowNull)(true),
-    (0, sequelize_typescript_1.Column)(sequelize_typescript_1.DataType.DATE),
-    __metadata("design:type", Date)
-], User.prototype, "lastLoginAt", void 0);
+    (0, sequelize_typescript_1.Column)(sequelize_typescript_1.DataType.DECIMAL(10, 2)),
+    __metadata("design:type", Number)
+], SubscriptionPlan.prototype, "priceYearly", void 0);
 __decorate([
-    (0, sequelize_typescript_1.HasMany)(() => Vehicle_1.Vehicle, 'userId'),
+    (0, sequelize_typescript_1.AllowNull)(true),
+    (0, sequelize_typescript_1.Column)(sequelize_typescript_1.DataType.ARRAY(sequelize_typescript_1.DataType.TEXT)),
     __metadata("design:type", Array)
-], User.prototype, "vehicles", void 0);
+], SubscriptionPlan.prototype, "features", void 0);
 __decorate([
-    (0, sequelize_typescript_1.HasMany)(() => Inspection_1.Inspection, 'userId'),
-    __metadata("design:type", Array)
-], User.prototype, "inspections", void 0);
+    (0, sequelize_typescript_1.AllowNull)(true),
+    (0, sequelize_typescript_1.Column)(sequelize_typescript_1.DataType.INTEGER),
+    __metadata("design:type", Number)
+], SubscriptionPlan.prototype, "inspectionLimit", void 0);
 __decorate([
-    (0, sequelize_typescript_1.HasMany)(() => Subscription_1.Subscription, 'userId'),
+    (0, sequelize_typescript_1.HasMany)(() => Subscription_1.Subscription, 'planId'),
     __metadata("design:type", Array)
-], User.prototype, "subscriptions", void 0);
-exports.User = User = __decorate([
+], SubscriptionPlan.prototype, "subscriptions", void 0);
+exports.SubscriptionPlan = SubscriptionPlan = __decorate([
     (0, sequelize_typescript_1.Table)({
-        tableName: 'users',
-        timestamps: true,
+        tableName: 'subscription_plans',
+        timestamps: false,
         underscored: true,
     })
-], User);
+], SubscriptionPlan);

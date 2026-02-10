@@ -1,4 +1,5 @@
 import { Sequelize } from 'sequelize-typescript';
+import bcrypt from 'bcrypt';
 import config from './config/config';
 import { User } from './models/User';
 import { Vehicle } from './models/Vehicle';
@@ -22,11 +23,6 @@ const db = new Sequelize({
     Subscription,
     Payment,
   ],
-  define: {
-    underscored: true,
-    createdAt: 'created_at',
-    updatedAt: 'updated_at',
-  },
   logging: false,
 });
 
@@ -40,10 +36,44 @@ async function seedSubscriptionPlans() {
   console.log('Seeded subscription plans');
 }
 
+async function seedDefaultUsers() {
+  const adminEmail = process.env.SEED_ADMIN_EMAIL || 'admin@coltium-auto.com';
+  const techEmail = process.env.SEED_TECH_EMAIL || 'tech@coltium-auto.com';
+  const defaultPassword = process.env.SEED_DEFAULT_PASSWORD || 'Coltium123!';
+
+  const existingAdmin = await User.findOne({ where: { email: adminEmail } });
+  const existingTech = await User.findOne({ where: { email: techEmail } });
+
+  const passwordHash = await bcrypt.hash(defaultPassword, 10);
+
+  if (!existingAdmin) {
+    await User.create({
+      email: adminEmail,
+      password: passwordHash,
+      name: 'Coltium Admin',
+      role: 'admin',
+      isActive: true,
+    } as any);
+    console.log(`Seeded admin user: ${adminEmail} / ${defaultPassword}`);
+  }
+
+  if (!existingTech) {
+    await User.create({
+      email: techEmail,
+      password: passwordHash,
+      name: 'Coltium Technician',
+      role: 'technician',
+      isActive: true,
+    } as any);
+    console.log(`Seeded technician user: ${techEmail} / ${defaultPassword}`);
+  }
+}
+
 async function initializeDatabase() {
   try {
     await db.sync({ alter: true });
     await seedSubscriptionPlans();
+    await seedDefaultUsers();
     console.log('Database synced successfully (Coltium-Auto)');
   } catch (error) {
     console.error('Failed to sync database:', error);

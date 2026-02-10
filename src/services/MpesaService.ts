@@ -71,7 +71,7 @@ class MpesaService {
   async getAccessToken(): Promise<string> {
     const url = `${this.baseUrl}/oauth/v1/generate?grant_type=client_credentials`;
     const credentials = Buffer.from(`${this.consumerKey}:${this.consumerSecret}`).toString('base64');
-    const response = await axios.get(url, {
+    const response = await axios.get<{ access_token: string }>(url, {
       headers: { Authorization: `Basic ${credentials}` },
     });
     return response.data.access_token;
@@ -231,7 +231,11 @@ class MpesaService {
     const accessToken = await this.getAccessToken();
     const timestamp = this.generateTimestamp();
     const password = this.generatePassword(timestamp);
-    const response = await axios.post(
+    const response = await axios.post<{
+      ResultCode?: number;
+      ResultDesc?: string;
+      CheckoutRequestID?: string;
+    }>(
       `${this.baseUrl}/mpesa/stkpushquery/v1/query`,
       {
         BusinessShortCode: this.businessShortCode,
