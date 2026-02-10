@@ -37,11 +37,13 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = require("express");
-const reportController = __importStar(require("../controllers/diagnosticReport.controller"));
+const vehicleController = __importStar(require("../controllers/vehicle.controller"));
 const auth_middleware_1 = __importDefault(require("../middlewares/auth.middleware"));
 const router = (0, express_1.Router)();
 router.use(auth_middleware_1.default);
-router.get('/', reportController.list);
-router.get('/:id', reportController.get);
-router.patch('/:id', reportController.updateReport);
+router.get('/', vehicleController.list);
+router.get('/:id', vehicleController.get);
+router.post('/', vehicleController.create);
+router.patch('/:id', vehicleController.update);
+router.delete('/:id', vehicleController.remove);
 exports.default = router;

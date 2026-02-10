@@ -37,11 +37,13 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = require("express");
-const reportController = __importStar(require("../controllers/diagnosticReport.controller"));
+const technicianController = __importStar(require("../controllers/technician.controller"));
 const auth_middleware_1 = __importDefault(require("../middlewares/auth.middleware"));
+const auth_middleware_2 = require("../middlewares/auth.middleware");
+const rbac_types_1 = require("../types/rbac.types");
 const router = (0, express_1.Router)();
 router.use(auth_middleware_1.default);
-router.get('/', reportController.list);
-router.get('/:id', reportController.get);
-router.patch('/:id', reportController.updateReport);
+router.use((0, auth_middleware_2.requireRole)([rbac_types_1.UserRole.ADMIN]));
+router.get('/technicians', technicianController.list);
+router.post('/technicians', technicianController.create);
 exports.default = router;

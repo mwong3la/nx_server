@@ -9,7 +9,7 @@ const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
 const dotenv_1 = __importDefault(require("dotenv"));
 const permissions_1 = require("../config/permissions");
 dotenv_1.default.config();
-const JWT_SECRET = process.env.JWT_SECRET;
+const JWT_SECRET = process.env.JWT_SECRET || 'coltium-secret';
 const isAuthenticated = async (req, res, next) => {
     const authHeader = req.headers.authorization;
     if (!authHeader?.startsWith('Bearer ')) {
@@ -55,10 +55,12 @@ exports.requirePermission = requirePermission;
 const requireRole = (roles) => {
     return (req, res, next) => {
         if (!req.user || !req.userRole) {
-            return res.status(401).json({ error: 'Authentication required' });
+            res.status(401).json({ error: 'Authentication required' });
+            return;
         }
         if (!roles.includes(req.userRole)) {
-            return res.status(403).json({ error: 'Insufficient role privileges' });
+            res.status(403).json({ error: 'Insufficient role privileges' });
+            return;
         }
         next();
     };

@@ -24,8 +24,9 @@
   "author": "Amos Mwongela",
   "license": "ISC",
   "dependencies": {
-    "axios": "^1.7.0",
     "@azure/storage-blob": "^12.27.0",
+    "@types/axios": "^0.9.36",
+    "axios": "^1.13.5",
     "bcrypt": "^6.0.0",
     "cors": "^2.8.5",
     "dotenv": "^16.5.0",

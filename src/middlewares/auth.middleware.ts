@@ -57,13 +57,15 @@ export const requirePermission = (permission: Permission) => {
 };
 
 export const requireRole = (roles: UserRole[]) => {
-    return (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
+    return (req: AuthenticatedRequest, res: Response, next: NextFunction): void => {
         if (!req.user || !req.userRole) {
-            return res.status(401).json({ error: 'Authentication required' });
+            res.status(401).json({ error: 'Authentication required' });
+            return;
         }
 
         if (!roles.includes(req.userRole)) {
-            return res.status(403).json({ error: 'Insufficient role privileges' });
+            res.status(403).json({ error: 'Insufficient role privileges' });
+            return;
         }
 
         next();

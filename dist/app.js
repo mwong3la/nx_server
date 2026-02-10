@@ -24,7 +24,7 @@ app.use((0, cors_1.default)({
 app.use(express_1.default.json());
 // Routes
 app.get('/', (req, res) => {
-    res.json({ message: "Up" });
+    res.json({ message: "Coltium-Auto API", version: "1.0" });
 });
 app.use("/api/v1", api_routes_1.default);
 async function startServer() {

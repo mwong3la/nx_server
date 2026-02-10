@@ -37,11 +37,11 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = require("express");
-const reportController = __importStar(require("../controllers/diagnosticReport.controller"));
+const paymentController = __importStar(require("../controllers/payment.controller"));
 const auth_middleware_1 = __importDefault(require("../middlewares/auth.middleware"));
 const router = (0, express_1.Router)();
-router.use(auth_middleware_1.default);
-router.get('/', reportController.list);
-router.get('/:id', reportController.get);
-router.patch('/:id', reportController.updateReport);
+// Public: M-Pesa server calls this
+router.post('/mpesa/callback', paymentController.handleMpesaCallback);
+// Protected: user polls payment status after STK push
+router.get('/status/:checkoutRequestId', auth_middleware_1.default, paymentController.getPaymentStatus);
 exports.default = router;
