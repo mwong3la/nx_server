@@ -11,14 +11,8 @@ const db_1 = require("./database/db");
 const app = (0, express_1.default)();
 const server = http_1.default.createServer(app);
 const PORT = process.env.PORT || 4000;
-const allowedOrigins = [
-    'http://localhost:3000',
-    'https://coltium-zeta.vercel.app',
-    'https://ciai-dashboard.vercel.app'
-];
 // Middlewares
 app.use((0, cors_1.default)({
-    origin: allowedOrigins,
     credentials: true,
 }));
 app.use(express_1.default.json());

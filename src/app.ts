@@ -10,15 +10,8 @@ const server = http.createServer(app);
 
 const PORT = process.env.PORT || 4000;
 
-const allowedOrigins = [
-  'http://localhost:3000',
-  'https://coltium-zeta.vercel.app',
-  'https://ciai-dashboard.vercel.app'
-];
-
 // Middlewares
 app.use(cors({
-  origin: allowedOrigins,
   credentials: true,
 }));
 
