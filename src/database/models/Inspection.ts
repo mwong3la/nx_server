@@ -22,6 +22,12 @@ export enum InspectionStatus {
   CANCELLED = 'cancelled',
 }
 
+/** Matches document services. Only 'preventive' requires an active subscription. */
+export const SERVICE_TYPES = ['on_demand', 'preventive', 'second_opinion', 'pre_purchase', 'insurance', 'fleet'] as const;
+export type ServiceType = (typeof SERVICE_TYPES)[number];
+
+export const SUBSCRIPTION_REQUIRED_SERVICE: ServiceType = 'preventive';
+
 @Table({
   tableName: 'inspections',
   timestamps: true,
@@ -42,12 +48,12 @@ export class Inspection extends Model {
   user!: User;
 
   @ForeignKey(() => Vehicle)
-  @AllowNull(false)
+  @AllowNull(true)
   @Column(DataType.UUID)
-  vehicleId!: string;
+  vehicleId!: string | null;
 
   @BelongsTo(() => Vehicle)
-  vehicle!: Vehicle;
+  vehicle?: Vehicle;
 
   @ForeignKey(() => User)
   @AllowNull(true)
@@ -63,6 +69,11 @@ export class Inspection extends Model {
     defaultValue: InspectionStatus.PENDING,
   })
   status!: InspectionStatus;
+
+  @AllowNull(false)
+  @Default('on_demand')
+  @Column(DataType.STRING)
+  serviceType!: ServiceType;
 
   @AllowNull(false)
   @Default(DataType.NOW)

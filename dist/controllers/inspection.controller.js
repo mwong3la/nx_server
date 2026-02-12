@@ -10,8 +10,10 @@ function toInspectionShape(i) {
     return {
         id: i.id,
         userId: i.userId,
-        vehicleId: i.vehicleId,
+        vehicleId: i.vehicleId ?? undefined,
+        serviceType: i.serviceType ?? 'on_demand',
         vehicle: i.vehicle ? { id: i.vehicle.id, make: i.vehicle.make, model: i.vehicle.model, year: i.vehicle.year, userId: i.vehicle.userId } : undefined,
+        user: i.user ? { id: i.user.id, name: i.user.name, email: i.user.email, phone: i.user.phone } : undefined,
         technicianId: i.technicianId ?? undefined,
         technician: i.technician ? { id: i.technician.id, email: i.technician.email, name: i.technician.name, role: i.technician.role } : undefined,
         status: i.status,
@@ -26,7 +28,8 @@ function toInspectionShape(i) {
     };
 }
 const includeVehicleAndTechnician = [
-    { model: Vehicle_1.Vehicle, as: 'vehicle', attributes: ['id', 'userId', 'make', 'model', 'year'] },
+    { model: Vehicle_1.Vehicle, as: 'vehicle', attributes: ['id', 'userId', 'make', 'model', 'year'], required: false },
+    { model: User_1.User, as: 'user', attributes: ['id', 'name', 'email', 'phone'], required: false },
     { model: User_1.User, as: 'technician', attributes: ['id', 'email', 'name', 'role'], required: false },
 ];
 const list = async (req, res) => {
@@ -103,29 +106,36 @@ const get = async (req, res) => {
 exports.get = get;
 const create = async (req, res) => {
     try {
-        const { vehicleId, scheduledAt, notes } = req.body;
-        const vehicle = await Vehicle_1.Vehicle.findByPk(vehicleId);
-        if (!vehicle) {
-            res.status(404).json({ message: 'Vehicle not found' });
-            return;
-        }
-        if (req.userRole !== rbac_types_1.UserRole.ADMIN && vehicle.userId !== req.user?.id) {
-            res.status(403).json({ message: 'Forbidden' });
-            return;
-        }
-        // Require an active subscription for non-admin users before creating an inspection
-        if (req.userRole !== rbac_types_1.UserRole.ADMIN) {
+        const userId = req.user.id;
+        const { serviceType, vehicleId, scheduledAt, notes } = req.body;
+        const resolvedServiceType = Inspection_1.SERVICE_TYPES.includes(serviceType) ? serviceType : 'on_demand';
+        // Only preventive (subscription) service requires an active subscription
+        if (req.userRole !== rbac_types_1.UserRole.ADMIN && resolvedServiceType === Inspection_1.SUBSCRIPTION_REQUIRED_SERVICE) {
             const activeSub = await Subscription_1.Subscription.findOne({
-                where: { userId: vehicle.userId, status: 'active' },
+                where: { userId, status: 'active' },
             });
             if (!activeSub) {
-                res.status(403).json({ message: 'An active subscription is required to request an inspection.' });
+                res.status(403).json({ message: 'An active subscription is required for the Preventive Vehicle Health Check. Please subscribe first.' });
                 return;
             }
         }
+        let resolvedVehicleId = null;
+        if (vehicleId && typeof vehicleId === 'string') {
+            const vehicle = await Vehicle_1.Vehicle.findByPk(vehicleId);
+            if (!vehicle) {
+                res.status(404).json({ message: 'Vehicle not found' });
+                return;
+            }
+            if (req.userRole !== rbac_types_1.UserRole.ADMIN && vehicle.userId !== userId) {
+                res.status(403).json({ message: 'Forbidden' });
+                return;
+            }
+            resolvedVehicleId = vehicle.id;
+        }
         const inspection = await Inspection_1.Inspection.create({
-            userId: vehicle.userId,
-            vehicleId,
+            userId,
+            serviceType: resolvedServiceType,
+            vehicleId: resolvedVehicleId,
             status: Inspection_1.InspectionStatus.PENDING,
             requestedAt: new Date(),
             scheduledAt: scheduledAt ? new Date(scheduledAt) : undefined,

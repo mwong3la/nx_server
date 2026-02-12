@@ -9,7 +9,7 @@ var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.Inspection = exports.InspectionStatus = void 0;
+exports.Inspection = exports.SUBSCRIPTION_REQUIRED_SERVICE = exports.SERVICE_TYPES = exports.InspectionStatus = void 0;
 const sequelize_typescript_1 = require("sequelize-typescript");
 const User_1 = require("./User");
 const Vehicle_1 = require("./Vehicle");
@@ -22,6 +22,9 @@ var InspectionStatus;
     InspectionStatus["COMPLETED"] = "completed";
     InspectionStatus["CANCELLED"] = "cancelled";
 })(InspectionStatus || (exports.InspectionStatus = InspectionStatus = {}));
+/** Matches document services. Only 'preventive' requires an active subscription. */
+exports.SERVICE_TYPES = ['on_demand', 'preventive', 'second_opinion', 'pre_purchase', 'insurance', 'fleet'];
+exports.SUBSCRIPTION_REQUIRED_SERVICE = 'preventive';
 let Inspection = class Inspection extends sequelize_typescript_1.Model {
 };
 exports.Inspection = Inspection;
@@ -43,9 +46,9 @@ __decorate([
 ], Inspection.prototype, "user", void 0);
 __decorate([
     (0, sequelize_typescript_1.ForeignKey)(() => Vehicle_1.Vehicle),
-    (0, sequelize_typescript_1.AllowNull)(false),
+    (0, sequelize_typescript_1.AllowNull)(true),
     (0, sequelize_typescript_1.Column)(sequelize_typescript_1.DataType.UUID),
-    __metadata("design:type", String)
+    __metadata("design:type", Object)
 ], Inspection.prototype, "vehicleId", void 0);
 __decorate([
     (0, sequelize_typescript_1.BelongsTo)(() => Vehicle_1.Vehicle),
@@ -69,6 +72,12 @@ __decorate([
     }),
     __metadata("design:type", String)
 ], Inspection.prototype, "status", void 0);
+__decorate([
+    (0, sequelize_typescript_1.AllowNull)(false),
+    (0, sequelize_typescript_1.Default)('on_demand'),
+    (0, sequelize_typescript_1.Column)(sequelize_typescript_1.DataType.STRING),
+    __metadata("design:type", String)
+], Inspection.prototype, "serviceType", void 0);
 __decorate([
     (0, sequelize_typescript_1.AllowNull)(false),
     (0, sequelize_typescript_1.Default)(sequelize_typescript_1.DataType.NOW),

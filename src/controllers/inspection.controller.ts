@@ -1,18 +1,20 @@
 import { Response } from 'express';
 import { Op } from 'sequelize';
-import { Inspection, InspectionStatus } from '../database/models/Inspection';
+import { Inspection, InspectionStatus, SERVICE_TYPES, SUBSCRIPTION_REQUIRED_SERVICE, type ServiceType } from '../database/models/Inspection';
 import { Vehicle } from '../database/models/Vehicle';
 import { User } from '../database/models/User';
 import { Subscription } from '../database/models/Subscription';
 import { AuthenticatedRequest } from '../types/auth';
 import { UserRole } from '../types/rbac.types';
 
-function toInspectionShape(i: Inspection & { vehicle?: Vehicle; technician?: User }) {
+function toInspectionShape(i: Inspection & { vehicle?: Vehicle; user?: User; technician?: User }) {
   return {
     id: i.id,
     userId: i.userId,
-    vehicleId: i.vehicleId,
+    vehicleId: i.vehicleId ?? undefined,
+    serviceType: (i as any).serviceType ?? 'on_demand',
     vehicle: i.vehicle ? { id: i.vehicle.id, make: i.vehicle.make, model: i.vehicle.model, year: i.vehicle.year, userId: i.vehicle.userId } : undefined,
+    user: i.user ? { id: i.user.id, name: (i.user as any).name, email: i.user.email, phone: (i.user as any).phone } : undefined,
     technicianId: i.technicianId ?? undefined,
     technician: i.technician ? { id: i.technician.id, email: i.technician.email, name: (i.technician as any).name, role: i.technician.role } : undefined,
     status: i.status,
@@ -28,7 +30,8 @@ function toInspectionShape(i: Inspection & { vehicle?: Vehicle; technician?: Use
 }
 
 const includeVehicleAndTechnician = [
-  { model: Vehicle, as: 'vehicle', attributes: ['id', 'userId', 'make', 'model', 'year'] },
+  { model: Vehicle, as: 'vehicle', attributes: ['id', 'userId', 'make', 'model', 'year'], required: false },
+  { model: User, as: 'user', attributes: ['id', 'name', 'email', 'phone'], required: false },
   { model: User, as: 'technician', attributes: ['id', 'email', 'name', 'role'], required: false },
 ];
 
@@ -101,29 +104,41 @@ export const get = async (req: AuthenticatedRequest, res: Response) => {
 
 export const create = async (req: AuthenticatedRequest, res: Response) => {
   try {
-    const { vehicleId, scheduledAt, notes } = req.body;
-    const vehicle = await Vehicle.findByPk(vehicleId);
-    if (!vehicle) {
-      res.status(404).json({ message: 'Vehicle not found' });
-      return;
-    }
-    if (req.userRole !== UserRole.ADMIN && vehicle.userId !== req.user?.id) {
-      res.status(403).json({ message: 'Forbidden' });
-      return;
-    }
-    // Require an active subscription for non-admin users before creating an inspection
-    if (req.userRole !== UserRole.ADMIN) {
+    const userId = req.user!.id;
+    const { serviceType, vehicleId, scheduledAt, notes } = req.body;
+
+    const resolvedServiceType: ServiceType =
+      SERVICE_TYPES.includes(serviceType) ? serviceType : 'on_demand';
+
+    // Only preventive (subscription) service requires an active subscription
+    if (req.userRole !== UserRole.ADMIN && resolvedServiceType === SUBSCRIPTION_REQUIRED_SERVICE) {
       const activeSub = await Subscription.findOne({
-        where: { userId: vehicle.userId, status: 'active' },
+        where: { userId, status: 'active' },
       });
       if (!activeSub) {
-        res.status(403).json({ message: 'An active subscription is required to request an inspection.' });
+        res.status(403).json({ message: 'An active subscription is required for the Preventive Vehicle Health Check. Please subscribe first.' });
         return;
       }
     }
+
+    let resolvedVehicleId: string | null = null;
+    if (vehicleId && typeof vehicleId === 'string') {
+      const vehicle = await Vehicle.findByPk(vehicleId);
+      if (!vehicle) {
+        res.status(404).json({ message: 'Vehicle not found' });
+        return;
+      }
+      if (req.userRole !== UserRole.ADMIN && vehicle.userId !== userId) {
+        res.status(403).json({ message: 'Forbidden' });
+        return;
+      }
+      resolvedVehicleId = vehicle.id;
+    }
+
     const inspection = await Inspection.create({
-      userId: vehicle.userId,
-      vehicleId,
+      userId,
+      serviceType: resolvedServiceType,
+      vehicleId: resolvedVehicleId,
       status: InspectionStatus.PENDING,
       requestedAt: new Date(),
       scheduledAt: scheduledAt ? new Date(scheduledAt) : undefined,
