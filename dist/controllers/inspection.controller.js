@@ -4,6 +4,7 @@ exports.complete = exports.start = exports.assign = exports.create = exports.get
 const Inspection_1 = require("../database/models/Inspection");
 const Vehicle_1 = require("../database/models/Vehicle");
 const User_1 = require("../database/models/User");
+const Subscription_1 = require("../database/models/Subscription");
 const rbac_types_1 = require("../types/rbac.types");
 function toInspectionShape(i) {
     return {
@@ -111,6 +112,16 @@ const create = async (req, res) => {
         if (req.userRole !== rbac_types_1.UserRole.ADMIN && vehicle.userId !== req.user?.id) {
             res.status(403).json({ message: 'Forbidden' });
             return;
+        }
+        // Require an active subscription for non-admin users before creating an inspection
+        if (req.userRole !== rbac_types_1.UserRole.ADMIN) {
+            const activeSub = await Subscription_1.Subscription.findOne({
+                where: { userId: vehicle.userId, status: 'active' },
+            });
+            if (!activeSub) {
+                res.status(403).json({ message: 'An active subscription is required to request an inspection.' });
+                return;
+            }
         }
         const inspection = await Inspection_1.Inspection.create({
             userId: vehicle.userId,

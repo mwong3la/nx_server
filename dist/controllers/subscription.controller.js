@@ -1,12 +1,8 @@
 "use strict";
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.cancel = exports.create = exports.getMine = exports.listPlans = void 0;
 const Subscription_1 = require("../database/models/Subscription");
 const SubscriptionPlan_1 = require("../database/models/SubscriptionPlan");
-const MpesaService_1 = __importDefault(require("../services/MpesaService"));
 function toPlanShape(p) {
     return {
         id: p.id,
@@ -69,14 +65,6 @@ exports.getMine = getMine;
 const create = async (req, res) => {
     try {
         const { planId, interval, phoneNumber } = req.body;
-        if (!phoneNumber || typeof phoneNumber !== 'string' || !phoneNumber.trim()) {
-            res.status(400).json({ message: 'Phone number is required for M-Pesa payment' });
-            return;
-        }
-        if (!MpesaService_1.default.isConfigured()) {
-            res.status(503).json({ message: 'M-Pesa payment is not configured. Please try again later.' });
-            return;
-        }
         const plan = await SubscriptionPlan_1.SubscriptionPlan.findByPk(planId);
         if (!plan) {
             res.status(404).json({ message: 'Plan not found' });
@@ -86,12 +74,9 @@ const create = async (req, res) => {
             where: { userId: req.user.id, status: 'pending' },
         });
         if (existingPending) {
-            res.status(400).json({ message: 'You already have a subscription pending payment. Complete or cancel it first.' });
+            res.status(400).json({ message: 'You already have a subscription pending activation. An admin will review it.' });
             return;
         }
-        const amount = interval === 'yearly' && plan.priceYearly != null
-            ? Number(plan.priceYearly)
-            : Number(plan.priceMonthly);
         const currentPeriodEnd = new Date();
         if (interval === 'yearly') {
             currentPeriodEnd.setFullYear(currentPeriodEnd.getFullYear() + 1);
@@ -105,32 +90,10 @@ const create = async (req, res) => {
             status: 'pending',
             currentPeriodEnd,
         });
-        try {
-            const { payment, mpesaResponse } = await MpesaService_1.default.initiateSTKPush(phoneNumber.trim(), amount, {
-                subscriptionId: sub.id,
-                accountReference: `Coltium-Auto - ${plan.name}`,
-                description: `Subscription ${plan.name} (${interval})`,
-            });
-            const withPlan = await Subscription_1.Subscription.findByPk(sub.id, { include: [{ model: SubscriptionPlan_1.SubscriptionPlan, as: 'plan' }] });
-            res.status(201).json({
-                subscription: toSubscriptionShape(withPlan),
-                payment: {
-                    id: payment.id,
-                    status: payment.status,
-                    amount,
-                    checkoutRequestId: mpesaResponse.CheckoutRequestID,
-                    customerMessage: mpesaResponse.CustomerMessage,
-                },
-            });
-        }
-        catch (mpesaError) {
-            await sub.update({ status: 'failed' });
-            console.error('M-Pesa STK push failed:', mpesaError);
-            res.status(400).json({
-                message: 'Failed to initiate M-Pesa payment',
-                details: mpesaError.response?.data?.errorMessage || mpesaError.message,
-            });
-        }
+        const withPlan = await Subscription_1.Subscription.findByPk(sub.id, { include: [{ model: SubscriptionPlan_1.SubscriptionPlan, as: 'plan' }] });
+        res.status(201).json({
+            subscription: toSubscriptionShape(withPlan),
+        });
     }
     catch (error) {
         res.status(500).json({ error: error.message });

@@ -50,11 +50,15 @@ export class Payment extends Model {
   amount!: number;
 
   @Column({
-    type: DataType.ENUM('mpesa'),
+    type: DataType.STRING,
     allowNull: false,
     defaultValue: 'mpesa',
   })
-  method!: string;
+  method!: string; // 'mpesa' | 'manual'
+
+  @AllowNull(true)
+  @Column(DataType.STRING)
+  reference?: string; // optional note/reference for manual payments
 
   @Column({
     type: DataType.ENUM(...Object.values(PaymentStatus)),

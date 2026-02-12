@@ -3,6 +3,7 @@ import { Op } from 'sequelize';
 import { Inspection, InspectionStatus } from '../database/models/Inspection';
 import { Vehicle } from '../database/models/Vehicle';
 import { User } from '../database/models/User';
+import { Subscription } from '../database/models/Subscription';
 import { AuthenticatedRequest } from '../types/auth';
 import { UserRole } from '../types/rbac.types';
 
@@ -109,6 +110,16 @@ export const create = async (req: AuthenticatedRequest, res: Response) => {
     if (req.userRole !== UserRole.ADMIN && vehicle.userId !== req.user?.id) {
       res.status(403).json({ message: 'Forbidden' });
       return;
+    }
+    // Require an active subscription for non-admin users before creating an inspection
+    if (req.userRole !== UserRole.ADMIN) {
+      const activeSub = await Subscription.findOne({
+        where: { userId: vehicle.userId, status: 'active' },
+      });
+      if (!activeSub) {
+        res.status(403).json({ message: 'An active subscription is required to request an inspection.' });
+        return;
+      }
     }
     const inspection = await Inspection.create({
       userId: vehicle.userId,

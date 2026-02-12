@@ -38,6 +38,9 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = require("express");
 const technicianController = __importStar(require("../controllers/technician.controller"));
+const adminSubscriptionController = __importStar(require("../controllers/adminSubscription.controller"));
+const adminPaymentController = __importStar(require("../controllers/adminPayment.controller"));
+const adminPlanController = __importStar(require("../controllers/adminPlan.controller"));
 const auth_middleware_1 = __importDefault(require("../middlewares/auth.middleware"));
 const auth_middleware_2 = require("../middlewares/auth.middleware");
 const rbac_types_1 = require("../types/rbac.types");
@@ -46,4 +49,14 @@ router.use(auth_middleware_1.default);
 router.use((0, auth_middleware_2.requireRole)([rbac_types_1.UserRole.ADMIN]));
 router.get('/technicians', technicianController.list);
 router.post('/technicians', technicianController.create);
+// Plans: list, create, update
+router.get('/plans', adminPlanController.listPlans);
+router.post('/plans', adminPlanController.createPlan);
+router.patch('/plans/:id', adminPlanController.updatePlan);
+// Subscriptions: list and update status
+router.get('/subscriptions', adminSubscriptionController.listSubscriptions);
+router.patch('/subscriptions/:id/status', adminSubscriptionController.updateSubscriptionStatus);
+// Payments: list all, create manual
+router.get('/payments', adminPaymentController.listPayments);
+router.post('/payments', adminPaymentController.createManualPayment);
 exports.default = router;

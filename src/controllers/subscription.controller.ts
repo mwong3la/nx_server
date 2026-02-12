@@ -2,7 +2,6 @@ import { Response } from 'express';
 import { Subscription } from '../database/models/Subscription';
 import { SubscriptionPlan } from '../database/models/SubscriptionPlan';
 import { AuthenticatedRequest } from '../types/auth';
-import MpesaService from '../services/MpesaService';
 
 function toPlanShape(p: SubscriptionPlan) {
   return {
@@ -66,15 +65,6 @@ export const getMine = async (req: AuthenticatedRequest, res: Response) => {
 export const create = async (req: AuthenticatedRequest, res: Response) => {
   try {
     const { planId, interval, phoneNumber } = req.body;
-    if (!phoneNumber || typeof phoneNumber !== 'string' || !phoneNumber.trim()) {
-      res.status(400).json({ message: 'Phone number is required for M-Pesa payment' });
-      return;
-    }
-    if (!MpesaService.isConfigured()) {
-      res.status(503).json({ message: 'M-Pesa payment is not configured. Please try again later.' });
-      return;
-    }
-
     const plan = await SubscriptionPlan.findByPk(planId);
     if (!plan) {
       res.status(404).json({ message: 'Plan not found' });
@@ -85,13 +75,9 @@ export const create = async (req: AuthenticatedRequest, res: Response) => {
       where: { userId: req.user!.id, status: 'pending' },
     });
     if (existingPending) {
-      res.status(400).json({ message: 'You already have a subscription pending payment. Complete or cancel it first.' });
+      res.status(400).json({ message: 'You already have a subscription pending activation. An admin will review it.' });
       return;
     }
-
-    const amount = interval === 'yearly' && plan.priceYearly != null
-      ? Number(plan.priceYearly)
-      : Number(plan.priceMonthly);
 
     const currentPeriodEnd = new Date();
     if (interval === 'yearly') {
@@ -107,35 +93,10 @@ export const create = async (req: AuthenticatedRequest, res: Response) => {
       currentPeriodEnd,
     });
 
-    try {
-      const { payment, mpesaResponse } = await MpesaService.initiateSTKPush(
-        phoneNumber.trim(),
-        amount,
-        {
-          subscriptionId: sub.id,
-          accountReference: `Coltium-Auto - ${plan.name}`,
-          description: `Subscription ${plan.name} (${interval})`,
-        }
-      );
-      const withPlan = await Subscription.findByPk(sub.id, { include: [{ model: SubscriptionPlan, as: 'plan' }] });
-      res.status(201).json({
-        subscription: toSubscriptionShape(withPlan as any),
-        payment: {
-          id: payment.id,
-          status: payment.status,
-          amount,
-          checkoutRequestId: mpesaResponse.CheckoutRequestID,
-          customerMessage: mpesaResponse.CustomerMessage,
-        },
-      });
-    } catch (mpesaError: any) {
-      await sub.update({ status: 'failed' });
-      console.error('M-Pesa STK push failed:', mpesaError);
-      res.status(400).json({
-        message: 'Failed to initiate M-Pesa payment',
-        details: mpesaError.response?.data?.errorMessage || mpesaError.message,
-      });
-    }
+    const withPlan = await Subscription.findByPk(sub.id, { include: [{ model: SubscriptionPlan, as: 'plan' }] });
+    res.status(201).json({
+      subscription: toSubscriptionShape(withPlan as any),
+    });
   } catch (error) {
     res.status(500).json({ error: (error as Error).message });
   }

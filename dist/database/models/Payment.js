@@ -58,12 +58,17 @@ __decorate([
 ], Payment.prototype, "amount", void 0);
 __decorate([
     (0, sequelize_typescript_1.Column)({
-        type: sequelize_typescript_1.DataType.ENUM('mpesa'),
+        type: sequelize_typescript_1.DataType.STRING,
         allowNull: false,
         defaultValue: 'mpesa',
     }),
     __metadata("design:type", String)
 ], Payment.prototype, "method", void 0);
+__decorate([
+    (0, sequelize_typescript_1.AllowNull)(true),
+    (0, sequelize_typescript_1.Column)(sequelize_typescript_1.DataType.STRING),
+    __metadata("design:type", String)
+], Payment.prototype, "reference", void 0);
 __decorate([
     (0, sequelize_typescript_1.Column)({
         type: sequelize_typescript_1.DataType.ENUM(...Object.values(PaymentStatus)),

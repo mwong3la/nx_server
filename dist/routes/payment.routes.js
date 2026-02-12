@@ -42,6 +42,8 @@ const auth_middleware_1 = __importDefault(require("../middlewares/auth.middlewar
 const router = (0, express_1.Router)();
 // Public: M-Pesa server calls this
 router.post('/mpesa/callback', paymentController.handleMpesaCallback);
+// Protected: user's payment history
+router.get('/mine', auth_middleware_1.default, paymentController.listMine);
 // Protected: user polls payment status after STK push
 router.get('/status/:checkoutRequestId', auth_middleware_1.default, paymentController.getPaymentStatus);
 exports.default = router;

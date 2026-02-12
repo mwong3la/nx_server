@@ -5,6 +5,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.db = void 0;
 exports.initializeDatabase = initializeDatabase;
+const sequelize_1 = require("sequelize");
 const sequelize_typescript_1 = require("sequelize-typescript");
 const bcrypt_1 = __importDefault(require("bcrypt"));
 const config_1 = __importDefault(require("./config/config"));
@@ -31,15 +32,86 @@ const db = new sequelize_typescript_1.Sequelize({
     logging: false,
 });
 exports.db = db;
+// Plans as per document: name, description, pricing, and listed features only (no inferred limits).
+const DOCUMENT_PLANS = [
+    {
+        slug: 'standard',
+        name: 'Personal Vehicle Health Plan – Standard',
+        description: 'For private vehicle owners who want preventive monitoring.',
+        priceMonthly: 1400,
+        priceYearly: 14000,
+        features: [
+            'One preventive diagnostic every 6 months',
+            '10% discount on additional on-demand visits',
+            'Priority booking',
+            'Digital service history access',
+        ],
+    },
+    {
+        slug: 'plus',
+        name: 'Personal Vehicle Health Plan – Plus',
+        description: 'Enhanced preventive monitoring with second-opinion support.',
+        priceMonthly: 2000,
+        priceYearly: 20000,
+        features: [
+            'One preventive diagnostic every 4 months',
+            '15% discount on additional visits',
+            'Second-opinion support included',
+            'Priority scheduling',
+            'Digital service history',
+        ],
+    },
+    {
+        slug: 'premium',
+        name: 'Personal Vehicle Health Plan – Premium',
+        description: 'Highest tier with insurance and warranty diagnostic eligibility.',
+        priceMonthly: 2800,
+        priceYearly: 28000,
+        features: [
+            'One preventive diagnostic every 3 months',
+            '20% discount on additional visits',
+            'Insurance and warranty diagnostic eligibility',
+            'Highest priority scheduling',
+            'Dedicated advisory support',
+            'Digital service history',
+        ],
+    },
+];
 async function seedSubscriptionPlans() {
-    const count = await SubscriptionPlan_1.SubscriptionPlan.count();
-    if (count > 0)
-        return;
-    await SubscriptionPlan_1.SubscriptionPlan.bulkCreate([
-        { name: 'Starter', slug: 'starter', description: 'Basic inspections', priceMonthly: 19.99, priceYearly: 199.99, features: ['5 inspections/year', 'Basic report'], inspectionLimit: 5 },
-        { name: 'Pro', slug: 'pro', description: 'Full diagnostic oversight', priceMonthly: 39.99, priceYearly: 399.99, features: ['Unlimited inspections', 'Full diagnostic report', 'Priority support'], inspectionLimit: null },
-    ]);
-    console.log('Seeded subscription plans');
+    for (const plan of DOCUMENT_PLANS) {
+        const [record] = await SubscriptionPlan_1.SubscriptionPlan.findOrCreate({
+            where: { slug: plan.slug },
+            defaults: {
+                name: plan.name,
+                description: plan.description,
+                priceMonthly: plan.priceMonthly,
+                priceYearly: plan.priceYearly,
+                features: plan.features,
+                inspectionLimit: null,
+            },
+        });
+        if (record) {
+            await record.update({
+                name: plan.name,
+                description: plan.description,
+                priceMonthly: plan.priceMonthly,
+                priceYearly: plan.priceYearly,
+                features: plan.features,
+                inspectionLimit: null,
+            });
+        }
+    }
+    // Migrate any subscriptions from legacy plans (Starter, Pro) to Standard, then remove legacy plans
+    const legacyPlans = await SubscriptionPlan_1.SubscriptionPlan.findAll({
+        where: { slug: { [sequelize_1.Op.in]: ['starter', 'pro'] } },
+    });
+    const standardPlan = await SubscriptionPlan_1.SubscriptionPlan.findOne({ where: { slug: 'standard' } });
+    if (standardPlan && legacyPlans.length > 0) {
+        const legacyIds = legacyPlans.map((p) => p.id);
+        await Subscription_1.Subscription.update({ planId: standardPlan.id }, { where: { planId: { [sequelize_1.Op.in]: legacyIds } } });
+    }
+    await SubscriptionPlan_1.SubscriptionPlan.destroy({ where: { slug: { [sequelize_1.Op.in]: ['starter', 'pro'] } } });
+    console.log('Seeded subscription plans (Standard, Plus, Premium)');
 }
 async function seedDefaultUsers() {
     const adminEmail = process.env.SEED_ADMIN_EMAIL || 'admin@coltium-auto.com';
