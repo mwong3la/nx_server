@@ -1,8 +1,7 @@
 import { Router } from 'express';
-import * as technicianController from '../controllers/technician.controller';
-import * as adminSubscriptionController from '../controllers/adminSubscription.controller';
-import * as adminPaymentController from '../controllers/adminPayment.controller';
-import * as adminPlanController from '../controllers/adminPlan.controller';
+import * as shipmentController from '../controllers/shipment.controller';
+import * as customerController from '../controllers/customer.controller';
+import * as userController from '../controllers/user.controller';
 import isAuthenticated from '../middlewares/auth.middleware';
 import { requireRole } from '../middlewares/auth.middleware';
 import { UserRole } from '../types/rbac.types';
@@ -12,20 +11,15 @@ const router = Router();
 router.use(isAuthenticated);
 router.use(requireRole([UserRole.ADMIN]));
 
-router.get('/technicians', technicianController.list);
-router.post('/technicians', technicianController.create);
+router.post('/customers', customerController.createCustomer);
+router.get('/customers', customerController.listCustomers);
+router.get('/customers/:id', customerController.getCustomer);
+router.patch('/customers/:id', customerController.updateCustomer);
 
-// Plans: list, create, update
-router.get('/plans', adminPlanController.listPlans);
-router.post('/plans', adminPlanController.createPlan);
-router.patch('/plans/:id', adminPlanController.updatePlan);
+router.post('/admins', userController.createAdmin);
 
-// Subscriptions: list and update status
-router.get('/subscriptions', adminSubscriptionController.listSubscriptions);
-router.patch('/subscriptions/:id/status', adminSubscriptionController.updateSubscriptionStatus);
-
-// Payments: list all, create manual
-router.get('/payments', adminPaymentController.listPayments);
-router.post('/payments', adminPaymentController.createManualPayment);
+router.get('/shipments', shipmentController.adminListShipments);
+router.post('/shipments', shipmentController.adminCreateShipment);
+router.patch('/shipments/:id', shipmentController.adminUpdateShipment);
 
 export default router;

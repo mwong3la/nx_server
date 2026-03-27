@@ -7,7 +7,7 @@ import { Permission, UserRole } from "../types/rbac.types";
 import { hasPermission } from "../config/permissions";
 dotenv.config();
 
-const JWT_SECRET = process.env.JWT_SECRET || 'coltium-secret';
+const JWT_SECRET = process.env.JWT_SECRET || 'nexbridge-dev-secret';
 
 export const isAuthenticated = async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
     const authHeader = req.headers.authorization;

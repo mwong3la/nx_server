@@ -1,14 +1,15 @@
 import { Request, Response } from 'express';
+import { Op } from 'sequelize';
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import { User } from '../database/models/User';
 import { AuthenticatedRequest } from '../types/auth';
-import dotenv from 'dotenv';
 import { UserRole } from '../types/rbac.types';
+import dotenv from 'dotenv';
 
 dotenv.config();
 
-const JWT_SECRET = process.env.JWT_SECRET || 'coltium-secret';
+const JWT_SECRET = process.env.JWT_SECRET || 'nexbridge-dev-secret';
 const JWT_EXPIRES_IN = '7d';
 
 function toUserShape(user: User) {
@@ -36,13 +37,26 @@ function generateToken(user: User): { token: string; expiresAt: string } {
 export const login = async (req: Request, res: Response) => {
   try {
     const { email, password } = req.body;
-    const user = await User.findOne({ where: { email } });
+    const emailNorm = typeof email === 'string' ? email.trim().toLowerCase() : '';
+    if (!emailNorm || typeof password !== 'string') {
+      res.status(400).json({ message: 'Email and password are required' });
+      return;
+    }
+    const user = await User.findOne({
+      where: { email: { [Op.iLike]: emailNorm } },
+    });
     if (!user || !(await bcrypt.compare(password, user.password))) {
       res.status(401).json({ message: 'Invalid credentials' });
       return;
     }
     if (!user.isActive) {
       res.status(401).json({ message: 'Account deactivated' });
+      return;
+    }
+    if (user.role !== UserRole.ADMIN) {
+      res.status(403).json({
+        message: 'Only staff sign-in is available. Use your tracking number on the public tracking page.',
+      });
       return;
     }
     await user.update({ lastLoginAt: new Date() });
@@ -58,32 +72,10 @@ export const login = async (req: Request, res: Response) => {
   }
 };
 
-export const signup = async (req: Request, res: Response) => {
-  try {
-    const { email, password, name, role, phone } = req.body;
-    const existing = await User.findOne({ where: { email } });
-    if (existing) {
-      res.status(400).json({ message: 'Account already exists with this email' });
-      return;
-    }
-    const hashedPassword = await bcrypt.hash(password, 10);
-    const user = await User.create({
-      email,
-      password: hashedPassword,
-      name: name || email.split('@')[0],
-      role: role && Object.values(UserRole).includes(role) ? role : UserRole.USER,
-      phone: phone || null,
-    });
-    const { token, expiresAt } = generateToken(user);
-    res.status(201).json({
-      user: toUserShape(user),
-      token,
-      expiresAt,
-    });
-  } catch (error: any) {
-    console.error(error);
-    res.status(500).json({ message: 'Signup failed', error: error.message });
-  }
+export const signup = async (_req: Request, res: Response) => {
+  res.status(403).json({
+    message: 'Public sign-up is not available. Track your delivery with your tracking number, or staff may sign in.',
+  });
 };
 
 export const me = async (req: AuthenticatedRequest, res: Response) => {

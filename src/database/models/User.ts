@@ -8,13 +8,10 @@ import {
   AllowNull,
   Unique,
   IsEmail,
-  HasMany,
 } from 'sequelize-typescript';
 import { UserRole } from '../../types/rbac.types';
-import { Vehicle } from './Vehicle';
-import { Inspection } from './Inspection';
-import { Subscription } from './Subscription';
 
+/** Staff who sign in (admin dashboard only). */
 @Table({
   tableName: 'users',
   timestamps: true,
@@ -47,7 +44,7 @@ export class User extends Model {
   @Column({
     type: DataType.ENUM(...Object.values(UserRole)),
     allowNull: false,
-    defaultValue: UserRole.USER,
+    defaultValue: UserRole.ADMIN,
   })
   role!: UserRole;
 
@@ -59,13 +56,4 @@ export class User extends Model {
   @AllowNull(true)
   @Column(DataType.DATE)
   lastLoginAt?: Date;
-
-  @HasMany(() => Vehicle, 'userId')
-  vehicles!: Vehicle[];
-
-  @HasMany(() => Inspection, 'userId')
-  inspections!: Inspection[];
-
-  @HasMany(() => Subscription, 'userId')
-  subscriptions!: Subscription[];
 }

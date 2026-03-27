@@ -4,13 +4,14 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.logout = exports.me = exports.signup = exports.login = void 0;
+const sequelize_1 = require("sequelize");
 const bcrypt_1 = __importDefault(require("bcrypt"));
 const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
 const User_1 = require("../database/models/User");
-const dotenv_1 = __importDefault(require("dotenv"));
 const rbac_types_1 = require("../types/rbac.types");
+const dotenv_1 = __importDefault(require("dotenv"));
 dotenv_1.default.config();
-const JWT_SECRET = process.env.JWT_SECRET || 'coltium-secret';
+const JWT_SECRET = process.env.JWT_SECRET || 'nexbridge-dev-secret';
 const JWT_EXPIRES_IN = '7d';
 function toUserShape(user) {
     return {
@@ -31,13 +32,26 @@ function generateToken(user) {
 const login = async (req, res) => {
     try {
         const { email, password } = req.body;
-        const user = await User_1.User.findOne({ where: { email } });
+        const emailNorm = typeof email === 'string' ? email.trim().toLowerCase() : '';
+        if (!emailNorm || typeof password !== 'string') {
+            res.status(400).json({ message: 'Email and password are required' });
+            return;
+        }
+        const user = await User_1.User.findOne({
+            where: { email: { [sequelize_1.Op.iLike]: emailNorm } },
+        });
         if (!user || !(await bcrypt_1.default.compare(password, user.password))) {
             res.status(401).json({ message: 'Invalid credentials' });
             return;
         }
         if (!user.isActive) {
             res.status(401).json({ message: 'Account deactivated' });
+            return;
+        }
+        if (user.role !== rbac_types_1.UserRole.ADMIN) {
+            res.status(403).json({
+                message: 'Only staff sign-in is available. Use your tracking number on the public tracking page.',
+            });
             return;
         }
         await user.update({ lastLoginAt: new Date() });
@@ -54,33 +68,10 @@ const login = async (req, res) => {
     }
 };
 exports.login = login;
-const signup = async (req, res) => {
-    try {
-        const { email, password, name, role, phone } = req.body;
-        const existing = await User_1.User.findOne({ where: { email } });
-        if (existing) {
-            res.status(400).json({ message: 'Account already exists with this email' });
-            return;
-        }
-        const hashedPassword = await bcrypt_1.default.hash(password, 10);
-        const user = await User_1.User.create({
-            email,
-            password: hashedPassword,
-            name: name || email.split('@')[0],
-            role: role && Object.values(rbac_types_1.UserRole).includes(role) ? role : rbac_types_1.UserRole.USER,
-            phone: phone || null,
-        });
-        const { token, expiresAt } = generateToken(user);
-        res.status(201).json({
-            user: toUserShape(user),
-            token,
-            expiresAt,
-        });
-    }
-    catch (error) {
-        console.error(error);
-        res.status(500).json({ message: 'Signup failed', error: error.message });
-    }
+const signup = async (_req, res) => {
+    res.status(403).json({
+        message: 'Public sign-up is not available. Track your delivery with your tracking number, or staff may sign in.',
+    });
 };
 exports.signup = signup;
 const me = async (req, res) => {

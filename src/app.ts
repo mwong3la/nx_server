@@ -19,7 +19,7 @@ app.use(express.json());
 
 // Routes
 app.get('/', (req: Request, res: Response) => {
-  res.json({ message: "Coltium-Auto API", version: "1.0" });
+  res.json({ message: 'Nexbridge API', version: '1.0' });
 });
 
 app.use("/api/v1", apiRouter);

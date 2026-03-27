@@ -9,7 +9,7 @@ const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
 const dotenv_1 = __importDefault(require("dotenv"));
 const permissions_1 = require("../config/permissions");
 dotenv_1.default.config();
-const JWT_SECRET = process.env.JWT_SECRET || 'coltium-secret';
+const JWT_SECRET = process.env.JWT_SECRET || 'nexbridge-dev-secret';
 const isAuthenticated = async (req, res, next) => {
     const authHeader = req.headers.authorization;
     if (!authHeader?.startsWith('Bearer ')) {

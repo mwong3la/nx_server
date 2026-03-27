@@ -32,26 +32,12 @@ var __importStar = (this && this.__importStar) || (function () {
         return result;
     };
 })();
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
 Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = require("express");
-const shipmentController = __importStar(require("../controllers/shipment.controller"));
-const customerController = __importStar(require("../controllers/customer.controller"));
-const userController = __importStar(require("../controllers/user.controller"));
-const auth_middleware_1 = __importDefault(require("../middlewares/auth.middleware"));
-const auth_middleware_2 = require("../middlewares/auth.middleware");
-const rbac_types_1 = require("../types/rbac.types");
+const publicTrackingController = __importStar(require("../controllers/publicTracking.controller"));
 const router = (0, express_1.Router)();
-router.use(auth_middleware_1.default);
-router.use((0, auth_middleware_2.requireRole)([rbac_types_1.UserRole.ADMIN]));
-router.post('/customers', customerController.createCustomer);
-router.get('/customers', customerController.listCustomers);
-router.get('/customers/:id', customerController.getCustomer);
-router.patch('/customers/:id', customerController.updateCustomer);
-router.post('/admins', userController.createAdmin);
-router.get('/shipments', shipmentController.adminListShipments);
-router.post('/shipments', shipmentController.adminCreateShipment);
-router.patch('/shipments/:id', shipmentController.adminUpdateShipment);
+/** Website search box: GET .../public/tracking?number=NB-XXXX or ?q= / ?tracking= */
+router.get('/tracking', publicTrackingController.lookupByQuery);
+/** Direct link: GET .../public/tracking/NB-XXXX */
+router.get('/tracking/:trackingNumber', publicTrackingController.lookupByTrackingNumber);
 exports.default = router;
