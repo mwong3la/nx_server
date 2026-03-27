@@ -11,9 +11,11 @@ const db_1 = require("./database/db");
 const app = (0, express_1.default)();
 const server = http_1.default.createServer(app);
 const PORT = process.env.PORT || 4000;
-// Middlewares
+// Middlewares — allow browser UI (Next.js on another port). Set FRONTEND_ORIGIN for production.
+const rawOrigins = process.env.FRONTEND_ORIGIN?.split(',').map((o) => o.trim()).filter(Boolean);
 app.use((0, cors_1.default)({
     credentials: true,
+    origin: rawOrigins && rawOrigins.length > 0 ? rawOrigins : true,
 }));
 app.use(express_1.default.json());
 // Routes

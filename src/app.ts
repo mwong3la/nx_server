@@ -10,10 +10,14 @@ const server = http.createServer(app);
 
 const PORT = process.env.PORT || 4000;
 
-// Middlewares
-app.use(cors({
-  credentials: true,
-}));
+// Middlewares — allow browser UI (Next.js on another port). Set FRONTEND_ORIGIN for production.
+const rawOrigins = process.env.FRONTEND_ORIGIN?.split(',').map((o) => o.trim()).filter(Boolean);
+app.use(
+  cors({
+    credentials: true,
+    origin: rawOrigins && rawOrigins.length > 0 ? rawOrigins : true,
+  })
+);
 
 app.use(express.json());
 
