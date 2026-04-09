@@ -82,6 +82,7 @@ curl -s -X POST http://localhost:4000/api/v1/admin/admins \
 | Auth | GET | `/api/v1/auth/me` *(requires Bearer)* |
 | Staff | GET | `/api/v1/users` *(admin)* |
 | Staff | GET | `/api/v1/users/:id` *(admin)* |
+| Public contact | POST | `/api/v1/public/contact` |
 | Public tracking | GET | `/api/v1/public/tracking` |
 | Public tracking | GET | `/api/v1/public/tracking/:trackingNumber` |
 | Admin | POST | `/api/v1/admin/customers` |
@@ -148,6 +149,30 @@ Returns the current admin user.
 **Headers:** `Authorization: Bearer <token>`
 
 Returns one admin by `id`, or `404`.
+
+---
+
+## Public contact form (no auth)
+
+Sends email via **Gmail** when `CONTACT_EMAIL` (sending account / **From**), `CONTACT_APP_PASSWORD` (Google App Password), and `CONTACT_TO_EMAIL` (**To**, your preferred inbox) are set — `CONTACT_TO_EMAIL` must differ from `CONTACT_EMAIL`. Host/port use Gmail defaults. Custom SMTP is supported via `SMTP_HOST`, `SMTP_USER`, `SMTP_PASS`, and `CONTACT_TO_EMAIL`. If mail is not configured, returns `503`.
+
+The HTML email can include your **logo image** from disk only: **`CONTACT_LOGO_PATH`**, else **`backend/assets/logo.png`**, else **`nexbridge_/public/logo.png`** (relative to the backend process). It is attached inline (CID); the server does **not** download the logo from your website.
+
+### `POST /api/v1/public/contact`
+
+**Body (JSON):**
+
+```json
+{
+  "name": "Jane Doe",
+  "email": "jane@example.com",
+  "message": "I would like a quote for road freight to Mombasa."
+}
+```
+
+**Response:** `{ "ok": true }`
+
+**Errors:** `400` validation, `502` SMTP send failure, `503` missing env configuration.
 
 ---
 

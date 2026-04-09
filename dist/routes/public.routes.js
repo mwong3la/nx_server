@@ -34,8 +34,11 @@ var __importStar = (this && this.__importStar) || (function () {
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = require("express");
+const publicContactController = __importStar(require("../controllers/publicContact.controller"));
 const publicTrackingController = __importStar(require("../controllers/publicTracking.controller"));
 const router = (0, express_1.Router)();
+/** Public site contact form → email (SMTP via env). */
+router.post('/contact', publicContactController.submitContact);
 /** Website search box: GET .../public/tracking?number=NB-XXXX or ?q= / ?tracking= */
 router.get('/tracking', publicTrackingController.lookupByQuery);
 /** Direct link: GET .../public/tracking/NB-XXXX */
